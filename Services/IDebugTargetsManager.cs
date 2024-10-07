@@ -16,5 +16,6 @@ namespace Onec.DebugAdapter.Services
         Task DetachDebugTargets(List<DebugTargetIdLight> debugTargets, bool sendDetachRequest);
         ThreadsResponse GetThreads(ThreadsArguments args);
         int GetThreadId(DebugTargetIdLight debugTargetId);
+        bool DebugTargetAttached(DebugTargetIdLight debugTarget);
     }
 }

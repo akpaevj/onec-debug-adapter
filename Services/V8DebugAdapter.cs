@@ -269,20 +269,23 @@ namespace Onec.DebugAdapter.Services
                 if (response?.ItemSpecified == true)
                     foreach (var item in response!.Item)
                     {
-                        var itemThreadId = _debugTargetsManager.GetThreadId(item.TargetId);
-
-                        switch (item.State)
+                        if (_debugTargetsManager.DebugTargetAttached(item.TargetId))
                         {
-                            case DbgTargetState.Worked:
-                                Protocol.SendEvent(new ContinuedEvent()
-                                {
-                                    ThreadId = itemThreadId,
-                                    AllThreadsContinued = false
-                                });
-                                break;
-                            default:
-                                break;
-                        };
+                            var itemThreadId = _debugTargetsManager.GetThreadId(item.TargetId);
+
+                            switch (item.State)
+                            {
+                                case DbgTargetState.Worked:
+                                    Protocol.SendEvent(new ContinuedEvent()
+                                    {
+                                        ThreadId = itemThreadId,
+                                        AllThreadsContinued = false
+                                    });
+                                    break;
+                                default:
+                                    break;
+                            };
+                        }
                     }
 
                 successAction?.Invoke();

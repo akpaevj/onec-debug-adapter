@@ -2,6 +2,7 @@
 {
     public interface IDebugServerClient : IDisposable
     {
+        Task ClearBreakOnNextStatement(RdbgSetBreamOnNextStatementRequest request, CancellationToken cancellationToken = default);
         Task<RdbgAttachDebugUiResponse?> AttachDebugUI(RdbgAttachDebugUiRequest request, CancellationToken cancellationToken = default);
         Task<RdbgAttachDetachDbgTargetResponse?> AttachDetachDbgTargets(RdbgAttachDetachDebugTargetsRequest request, CancellationToken cancellationToken = default);
         Task<RdbgDetachDebugUiResponse?> DetachDebugUI(RdbgDetachDebugUiRequest request, CancellationToken cancellationToken = default);

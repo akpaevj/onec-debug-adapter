@@ -108,6 +108,8 @@ namespace Onec.DebugAdapter.Services
             request.Attach = true;
             debugTargets.ForEach(c => request.Id.Add(c.ToLight()));
 
+            await _debugServerClient.ClearBreakOnNextStatement(_configuration.CreateRequest<RdbgSetBreamOnNextStatementRequest>(), _cancellation);
+
             var response = await _debugServerClient.AttachDetachDbgTargets(request, _cancellation);
 
             foreach (var debugTarget in debugTargets)
@@ -126,17 +128,19 @@ namespace Onec.DebugAdapter.Services
 
         public async Task DetachDebugTargets(List<DebugTargetIdLight> debugTargets, bool sendDetachRequest)
         {
-            if (debugTargets.Count == 0)
+            var toHandle = debugTargets.Where(c => _threadIds.ContainsKey(c.Id)).ToList();
+
+            if (toHandle.Count == 0)
                 return;
 
             var request = _configuration.CreateRequest<RdbgAttachDetachDebugTargetsRequest>();
             request.Attach = false;
-            debugTargets.ForEach(c => request.Id.Add(c));
+            toHandle.ForEach(c => request.Id.Add(c));
 
             if (sendDetachRequest)
                 await _debugServerClient.AttachDetachDbgTargets(request, _cancellation);
 
-            debugTargets.ForEach(c =>
+            toHandle.ForEach(c =>
             {
                 var threadId = GetThreadId(c);
 
@@ -190,5 +194,8 @@ namespace Onec.DebugAdapter.Services
                 return id;
             }
         }
+
+        public bool DebugTargetAttached(DebugTargetIdLight debugTarget)
+            => _threadIds.ContainsKey(debugTarget.Id);
     }
 }

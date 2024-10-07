@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.VisualStudio.Shared.VSCodeDebugProtocol.Messages;
 using Onec.DebugAdapter.Services;
 using RestSharp;
 using System.Net.Http.Headers;
@@ -37,6 +38,15 @@ namespace Onec.DebugAdapter.DebugServer
             request.AddQueryParameter("cmd", "test");
 
             await _client.PostAsync<RdbgTestRequest>(request, cancellationToken);
+        }
+
+        public async Task ClearBreakOnNextStatement(RdbgSetBreamOnNextStatementRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("rdbg");
+            restRequest.AddQueryParameter("cmd", "clearBreakOnNextStatement");
+            restRequest.AddXmlBody(request);
+
+            await _client.PostAsync<RdbgSetBreamOnNextStatementRequest>(restRequest, cancellationToken);
         }
 
         public async Task<RdbgAttachDebugUiResponse?> AttachDebugUI(RdbgAttachDebugUiRequest request, CancellationToken cancellationToken = default)

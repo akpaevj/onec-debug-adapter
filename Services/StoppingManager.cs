@@ -78,9 +78,11 @@ namespace Onec.DebugAdapter.Services
                 moduleInfo.BpInfo.Add(new BreakpointInfo()
                 {
                     Line = bp.Line,
-                    HitCount = 1,
+                    HitCount = int.TryParse(bp.HitCondition, out var hit) ? hit : 1,
+                    CurrentHitCounter = 1,
+                    BreakOnHitCount = !string.IsNullOrEmpty(bp.HitCondition),
                     IsActive = true,
-                    PutDescription = bp.LogMessage,
+                    PutExpressionResult = bp.LogMessage,
                     ShowOutputMessage = !string.IsNullOrEmpty(bp.LogMessage),
                     ContinueExecution = !string.IsNullOrEmpty(bp.LogMessage),
                     Condition = bp.Condition ?? "",
@@ -410,9 +412,12 @@ namespace Onec.DebugAdapter.Services
             return result;
         }
 
-        private void CallStackFormedHandler(object? sender, CallStackFormedEventArgs e)
+        private async void CallStackFormedHandler(object? sender, CallStackFormedEventArgs e)
         {
             var threadId = _targetsManager.GetThreadId(e.Info.TargetId);
+
+            var stopPoint = e.Info.CallStack.Reverse().First();
+            var requestKey = GetRequestKey(stopPoint.ModuleId);
 
             if (e.Info.CallStackSpecified)
             {
@@ -430,7 +435,10 @@ namespace Onec.DebugAdapter.Services
                 _client.SendOutput(e.Info.Message);
 
             if (e.Info.SendMessageOnly == true)
+            {
+                await ContinueDebugTarget(e.Info.TargetId);
                 return;
+            }
 
             if (e.Info.StopByBp == true || e.Info.SuspendedByOther)
                 _client.SendEvent(new StoppedEvent()
@@ -439,6 +447,15 @@ namespace Onec.DebugAdapter.Services
                     AllThreadsStopped = true,
                     ThreadId = _targetsManager.GetThreadId(e.Info.TargetId)
                 });
+        }
+
+        private async Task ContinueDebugTarget(DebugTargetId target)
+        {
+            var request = _configuration.CreateRequest<RdbgStepRequest>();
+            request.TargetId = target.ToLight();
+            request.Action = DebugStepAction.Continue;
+
+            await _debugServerClient.Step(request, _cancellation);
         }
 
         private void RuntimeExceptionHandler(object? sender, RuntimeExceptionArgs e)
@@ -484,5 +501,8 @@ namespace Onec.DebugAdapter.Services
 
             return reference;
         }
+
+        private static (string, string, string) GetRequestKey(BslModuleIdInternal id)
+            => (id.ExtensionName, id.ObjectId, id.PropertyId);
     }
 }

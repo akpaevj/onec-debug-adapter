@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "onec-debug-adapter": {
+      "commandName": "Project",
+      "commandLineArgs": "--debug=true"
+    }
+  }
+}

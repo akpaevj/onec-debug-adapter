@@ -1,7 +1,7 @@
 # 1C:Enterprise Debug Adapter
 ## Реализация DAP для HTTP сервера отладки 1С.
 
-Алаптер реалмзован на .NET платформе и требует для своей работы утсновленного рантайма [.NET 6](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
+Адаптер реализован на .NET платформе и требует для своей работы установленного рантайма [.NET 6](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
 
 ### Доступная дополнительная функциональность:
 - Логпоинты

@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.Shared.VSCodeDebugProtocol.Messages;
 using Onec.DebugAdapter.DebugProtocol;
 using Onec.DebugAdapter.DebugServer;
 using Onec.DebugAdapter.Extensions;
-using Onec.DebugAdapter.Metadata;
+using Onec.DebugAdapter.V8;
 using System.Net.Http.Headers;
 using Exception = System.Exception;
 using Thread = Microsoft.VisualStudio.Shared.VSCodeDebugProtocol.Messages.Thread;
@@ -67,6 +67,7 @@ namespace Onec.DebugAdapter.Services
             {
                 SupportsEvaluateForHovers = true,
                 SupportsExceptionFilterOptions = true,
+                SupportsConditionalBreakpoints = true,
                 SupportsLogPoints = true,
                 ExceptionBreakpointFilters = new()
                 {

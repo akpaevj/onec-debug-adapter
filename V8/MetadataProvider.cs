@@ -11,7 +11,7 @@ using System.Linq.Expressions;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 
-namespace Onec.DebugAdapter.Metadata
+namespace Onec.DebugAdapter.V8
 {
     public class MetadataProvider : IMetadataProvider
     {

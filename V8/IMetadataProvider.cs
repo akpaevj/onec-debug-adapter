@@ -1,4 +1,4 @@
-﻿namespace Onec.DebugAdapter.Metadata
+﻿namespace Onec.DebugAdapter.V8
 {
     public interface IMetadataProvider
     {

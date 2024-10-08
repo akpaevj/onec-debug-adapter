@@ -2,7 +2,7 @@
 using Microsoft.VisualStudio.Shared.VSCodeDebugProtocol.Messages;
 using Onec.DebugAdapter.DebugServer;
 using Onec.DebugAdapter.Extensions;
-using Onec.DebugAdapter.Metadata;
+using Onec.DebugAdapter.V8;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -35,6 +35,8 @@ namespace Onec.DebugAdapter.Services
         private readonly ConcurrentDictionary<string, TaskCompletionSource<List<CalculationResultBaseData>>> _evaluationTasks = new();
         private readonly References<(int ThreadId, int FrameId, List<SourceCalculationDataItem> Path, ViewInterface Interface)> _variableIdentifiers = new();
 
+        private readonly ConcurrentDictionary<(string Extension, string ObjectId, string PropertyId), SetBreakpointsArguments> _moduleSetBreakpointsArguments = new();
+
         public StoppingManager(
             IDebugConfiguration debugConfiguration,
             IMetadataProvider metadataProvider,
@@ -61,48 +63,60 @@ namespace Onec.DebugAdapter.Services
 
         public async Task<SetBreakpointsResponse> SetBreakpoints(SetBreakpointsArguments args)
         {
-            var (Extension, ObjectId, PropertyId) = _metadataProvider.ModuleInfoByPath(args.Source.Path.CapitalizeFirstChar());
+            var debuggerResponse = new SetBreakpointsResponse();
 
-            var moduleInfo = new ModuleBpInfoInternal()
-            {
-                Id = new BslModuleIdInternal()
-                {
-                    Type = string.IsNullOrEmpty(Extension) ? BslModuleType.ConfigModule : BslModuleType.ExtensionModule,
-                    ExtensionName = Extension,
-                    ObjectId = ObjectId,
-                    PropertyId = PropertyId
-                }
-            };
-            args.Breakpoints.ForEach(bp =>
-            {
-                moduleInfo.BpInfo.Add(new BreakpointInfo()
-                {
-                    Line = bp.Line,
-                    HitCount = int.TryParse(bp.HitCondition, out var hit) ? hit : 1,
-                    CurrentHitCounter = 1,
-                    BreakOnHitCount = !string.IsNullOrEmpty(bp.HitCondition),
-                    IsActive = true,
-                    PutExpressionResult = bp.LogMessage,
-                    ShowOutputMessage = !string.IsNullOrEmpty(bp.LogMessage),
-                    ContinueExecution = !string.IsNullOrEmpty(bp.LogMessage),
-                    Condition = bp.Condition ?? "",
-                    BreakOnCondition = !string.IsNullOrEmpty(bp.Condition)
-                });
-            });
+            var requestedModule = _metadataProvider.ModuleInfoByPath(args.Source.Path.CapitalizeFirstChar());
+            _moduleSetBreakpointsArguments.TryRemove((requestedModule.Extension, requestedModule.ObjectId, requestedModule.PropertyId), out _);
+            _moduleSetBreakpointsArguments.TryAdd((requestedModule.Extension, requestedModule.ObjectId, requestedModule.PropertyId), args);
+
             var request = _configuration.CreateRequest<RdbgSetBreakpointsRequest>();
-            request.BpWorkspace.Add(moduleInfo);
+
+            _moduleSetBreakpointsArguments.Select(c => c.Value).ToList().ForEach(cArgs =>
+            {
+                var (Extension, ObjectId, PropertyId) = _metadataProvider.ModuleInfoByPath(cArgs.Source.Path.CapitalizeFirstChar());
+
+                var moduleInfo = new ModuleBpInfoInternal()
+                {
+                    Id = new BslModuleIdInternal()
+                    {
+                        Type = string.IsNullOrEmpty(Extension) ? BslModuleType.ConfigModule : BslModuleType.ExtensionModule,
+                        ExtensionName = Extension,
+                        ObjectId = ObjectId,
+                        PropertyId = PropertyId
+                    }
+                };
+                cArgs.Breakpoints.ForEach(bp =>
+                {
+                    moduleInfo.BpInfo.Add(new BreakpointInfo()
+                    {
+                        Line = bp.Line,
+                        HitCount = int.TryParse(bp.HitCondition, out var hit) ? hit : 1,
+                        BreakOnHitCount = !string.IsNullOrEmpty(bp.HitCondition),
+                        IsActive = true,
+                        PutExpressionResult = bp.LogMessage,
+                        ShowOutputMessage = !string.IsNullOrEmpty(bp.LogMessage),
+                        ContinueExecution = !string.IsNullOrEmpty(bp.LogMessage),
+                        Condition = bp.Condition ?? "",
+                        BreakOnCondition = !string.IsNullOrEmpty(bp.Condition)
+                    });
+                });
+
+                request.BpWorkspace.Add(moduleInfo);
+
+                if (requestedModule == (Extension, ObjectId, PropertyId))
+                {
+                    debuggerResponse.Breakpoints = moduleInfo.BpInfo.Select(c => new Breakpoint()
+                    {
+                        Line = (int)(c.Line),
+                        Source = args.Source,
+                        Verified = true
+                    }).ToList();
+                }
+            });
 
             await _debugServerClient.SetBreakpoints(request);
 
-            return new SetBreakpointsResponse()
-            {
-                Breakpoints = moduleInfo.BpInfo.Select(c => new Breakpoint()
-                {
-                    Line = (int)(c.Line),
-                    Source = args.Source,
-                    Verified = true
-                }).ToList()
-            };
+            return debuggerResponse;
         }
 
         public async Task<SetExceptionBreakpointsResponse> SetExceptionBreakpoints(SetExceptionBreakpointsArguments args)
@@ -417,7 +431,7 @@ namespace Onec.DebugAdapter.Services
             var threadId = _targetsManager.GetThreadId(e.Info.TargetId);
 
             var stopPoint = e.Info.CallStack.Reverse().First();
-            var requestKey = GetRequestKey(stopPoint.ModuleId);
+            var requestKey = GetModuleKey(stopPoint.ModuleId);
 
             if (e.Info.CallStackSpecified)
             {
@@ -502,7 +516,7 @@ namespace Onec.DebugAdapter.Services
             return reference;
         }
 
-        private static (string, string, string) GetRequestKey(BslModuleIdInternal id)
+        private static (string, string, string) GetModuleKey(BslModuleIdInternal id)
             => (id.ExtensionName, id.ObjectId, id.PropertyId);
     }
 }

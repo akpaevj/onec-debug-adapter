@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Onec.DebugAdapter.DebugProtocol;
 using Onec.DebugAdapter.DebugServer;
-using Onec.DebugAdapter.Metadata;
+using Onec.DebugAdapter.V8;
 using Onec.DebugAdapter.Services;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

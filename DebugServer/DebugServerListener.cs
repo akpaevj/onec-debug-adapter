@@ -24,6 +24,7 @@ namespace Onec.DebugAdapter.DebugServer
         public event EventHandler<SetForegroundHelperArgs>? SetForegroundHelper;
         public event EventHandler<ForegroundHelperRequestArgs>? ForegroundHelperRequested;
         public event EventHandler<ProcessForegroundHelperArgs>? ProcessForegroundHelper;
+        public event EventHandler<ShowMetadataObjectArgs>? ShowMetadataObject;
 
         public DebugServerListener(IDebugConfiguration debugConfiguration, IDebugServerClient debugServerClient)
         {
@@ -72,12 +73,14 @@ namespace Onec.DebugAdapter.DebugServer
                                 case DbguiExtCmds.ForegroundHelperProcess:
                                     ProcessForegroundHelper?.Invoke(this, new ProcessForegroundHelperArgs((extCommand as DbguiExtCmdInfoForegroundHelperProcess)!));
                                     break;
+                                case DbguiExtCmds.ShowMetadataObject:
+                                    ShowMetadataObject?.Invoke(this, new ShowMetadataObjectArgs((extCommand as DbguiExtCmdShowMetadataObject)!));
+                                    break;
                                 case DbguiExtCmds.CorrectedBp:
                                 case DbguiExtCmds.RteOnBpConditionProcessing:
                                 case DbguiExtCmds.MeasureResultProcessing:
                                 case DbguiExtCmds.ValueModified:
                                 case DbguiExtCmds.ErrorViewInfo:
-                                case DbguiExtCmds.ShowMetadataObject:
                                 case DbguiExtCmds.Unknown:
                                 default:
                                     throw new NotImplementedException($"Получено неизвестное значение CmdID: {extCommand.CmdId}");

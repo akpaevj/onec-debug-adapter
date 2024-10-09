@@ -19,4 +19,6 @@ namespace Onec.DebugAdapter.DebugServer
     public record ForegroundHelperRequestArgs(DbguiExtCmdInfoForegroundHelperRequest Info);
 
     public record ProcessForegroundHelperArgs(DbguiExtCmdInfoForegroundHelperProcess Info);
+
+    public record ShowMetadataObjectArgs(DbguiExtCmdShowMetadataObject Info);
 }

@@ -14,10 +14,12 @@ namespace Onec.DebugAdapter.DebugProtocol
     {
         private CancellationToken _cancellation;
         private readonly IDebugTargetsManager _debugTargetsManager;
+        private readonly IDebugServerListener _debugServerListener;
         private DebugProtocolClient _client = null!;
 
-        public DebugAdapterExtender(IDebugTargetsManager debugTargetsManager)
+        public DebugAdapterExtender(IDebugTargetsManager debugTargetsManager, IDebugServerListener serverListener)
         {
+            _debugServerListener = serverListener;
             _debugTargetsManager = debugTargetsManager;
         }
 
@@ -81,6 +83,13 @@ namespace Onec.DebugAdapter.DebugProtocol
                     handler.SetError(new ProtocolException("Ошибка получения списка предметов отладки", ex));
                 }
             });
+
+            _debugServerListener.ShowMetadataObject += ShowMetadataObjectHandler;
+        }
+
+        private void ShowMetadataObjectHandler(object? sender, ShowMetadataObjectArgs e)
+        {
+            
         }
     }
 }

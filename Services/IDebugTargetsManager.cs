@@ -6,7 +6,7 @@ namespace Onec.DebugAdapter.Services
 {
     public interface IDebugTargetsManager
     {
-        void Run(DebugProtocolClient client, CancellationToken cancellationToken);
+        Task Run(DebugProtocolClient client, CancellationToken cancellationToken);
         DebugTargetId GetTargetId(int threadId);
         DebugTargetId[] GetAttachedDebugTargets();
         Task<DebugTargetId[]> GetDebugTargets();

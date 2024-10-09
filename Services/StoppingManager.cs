@@ -219,6 +219,9 @@ namespace Onec.DebugAdapter.Services
 
             var response = new VariablesResponse();
 
+            if (result.ErrorOccurred)
+                return response;
+
             switch(result.CalculationResult.ViewInterface)
             {
                 case ViewInterface.Enum:

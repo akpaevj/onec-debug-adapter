@@ -31,13 +31,12 @@ namespace Onec.DebugAdapter.Services
             _serverListener.DebugTargetEvent += DebugTargetEventHandler;
         }
 
-        public void Run(DebugProtocolClient client, CancellationToken cancellationToken)
+        public async Task Run(DebugProtocolClient client, CancellationToken cancellationToken)
         {
             _cancellation = cancellationToken;
             _client = client;
 
-            // Попросим клиента отправить запрос установки автоподключаемых предметов отладки
-            _client.SendEvent(new RaiseSetAutoAttachTargetTypesEvent());
+            await SetAutoAttachTargetTypes(_configuration.InitialTargetTypes.ToList());
         }
 
         public DebugTargetId GetTargetId(int threadId)

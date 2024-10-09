@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.Shared.VSCodeDebugProtocol;
 using Microsoft.VisualStudio.Shared.VSCodeDebugProtocol.Messages;
+using Newtonsoft.Json.Linq;
 using Onec.DebugAdapter.DebugProtocol;
 using Onec.DebugAdapter.DebugServer;
 using Onec.DebugAdapter.Extensions;
@@ -50,12 +51,14 @@ namespace Onec.DebugAdapter.Services
             InitializeProtocolClient(input, output);
             _cancellation.Register(Protocol.Stop);
 
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 _debugAdapterExtender.Init(Protocol, _cancellation);
 
                 Protocol.Run();
                 Protocol.WaitForReader();
+                
+                await Disconnect();
             }, cancellationToken);
         }
 
@@ -83,54 +86,27 @@ namespace Onec.DebugAdapter.Services
             });
         }
 
-        protected override async void HandleAttachRequestAsync(IRequestResponder<AttachArguments> responder)
+        protected override async void HandleLaunchRequestAsync(IRequestResponder<LaunchArguments> responder)
         {
-            _configuration.Init(responder.Arguments.ConfigurationProperties);
-
             try
             {
-                await _debugServerClient.Test(_cancellation);
-
-                var response = await _debugServerClient.AttachDebugUI(_configuration.CreateRequest<RdbgAttachDebugUiRequest>(i =>
-                {
-                    i.Options = new DebuggerOptions()
-                    {
-                        ForegroundAbility = true
-                    };
-                }));
-
-                _attached = true;
-
-                switch (response!.Result)
-                {
-                    case AttachDebugUiResult.Unknown:
-                        SetProtocolError(responder, "Неизвестная ошибка при подключении к серверу отладки");
-                        break;
-                    case AttachDebugUiResult.IbInDebug:
-                        SetProtocolError(responder, "Информационная база уже отлаживается");
-                        break;
-                    case AttachDebugUiResult.NotRegistered:
-                        SetProtocolError(responder, "Не удалось подключиться к серверу отладки");
-                        break;
-                    case AttachDebugUiResult.CredentialsRequired:
-                    case AttachDebugUiResult.FullCredentialsRequired:
-                        SetProtocolError(responder, "Ошибка аутентификации на сервере отладки");
-                        break;
-                    default:
-                        responder.SetResponse(new AttachResponse());
-                        Protocol.SendEvent(new InitializedEvent());
-
-                        await _metadataProvider.Init(_cancellation);
-                        _debugTargetsManager.Run(Protocol, _cancellation);
-                        _stoppingManager.Run(Protocol, _cancellation);
-                        _debugServerListener.Run(Protocol, _cancellation);
-
-                        break;
-                };
+                await InitLaunchAttach(responder, responder.Arguments.ConfigurationProperties, true);
             }
             catch (Exception ex)
             {
-                SetProtocolError(responder, "Ошибка присоединения к серверу отладки", ex);
+                SetProtocolError(responder, "Ошибка запуска отладки (запуск)", ex);
+            }
+        }
+
+        protected override async void HandleAttachRequestAsync(IRequestResponder<AttachArguments> responder)
+        {
+            try
+            {
+                await InitLaunchAttach(responder, responder.Arguments.ConfigurationProperties, false);
+            }
+            catch (Exception ex)
+            {
+                SetProtocolError(responder, "Ошибка запуска отладки (присоединение)", ex);
             }
         }
 
@@ -244,17 +220,70 @@ namespace Onec.DebugAdapter.Services
         {
             try
             {
-                if (_attached)
-                    await _debugServerClient.DetachDebugUI(_configuration.CreateRequest<RdbgDetachDebugUiRequest>());
-
-                _attached = false;
-
+                await Disconnect();
                 responder.SetResponse(new DisconnectResponse());
             }
             catch (Exception ex)
             {
                 SetProtocolError(responder, "Ошибка присоединения к серверу отладки", ex);
             }
+        }
+
+        private async Task InitLaunchAttach(IRequestResponder responder, Dictionary<string, JToken> configurationArgs, bool launch)
+        {
+            await _configuration.Init(configurationArgs);
+            await _debugServerClient.Test(_cancellation);
+
+            var response = await _debugServerClient.AttachDebugUI(_configuration.CreateRequest<RdbgAttachDebugUiRequest>(i =>
+            {
+                i.Options = new DebuggerOptions()
+                {
+                    ForegroundAbility = true
+                };
+            }));
+
+            _attached = true;
+
+            switch (response!.Result)
+            {
+                case AttachDebugUiResult.Unknown:
+                    SetProtocolError(responder, "Неизвестная ошибка при подключении к серверу отладки");
+                    break;
+                case AttachDebugUiResult.IbInDebug:
+                    SetProtocolError(responder, "Информационная база уже отлаживается");
+                    break;
+                case AttachDebugUiResult.NotRegistered:
+                    SetProtocolError(responder, "Не удалось подключиться к серверу отладки");
+                    break;
+                case AttachDebugUiResult.CredentialsRequired:
+                case AttachDebugUiResult.FullCredentialsRequired:
+                    SetProtocolError(responder, "Ошибка аутентификации на сервере отладки");
+                    break;
+                default:
+                    responder.SetResponse(launch ? new LaunchResponse() : new AttachResponse());
+                    Protocol.SendEvent(new InitializedEvent());
+
+                    await _metadataProvider.Init(_cancellation);
+                    _debugServerListener.Run(Protocol, _cancellation);
+                    await _debugTargetsManager.Run(Protocol, _cancellation);
+                    _stoppingManager.Run(Protocol, _cancellation);
+
+                    if (launch)
+                    {
+                        var debuggee = new Debuggee(_configuration);
+                        debuggee.Run(Protocol);
+                    }
+
+                    break;
+            };
+        }
+
+        private async Task Disconnect()
+        {
+            if (_attached)
+                await _debugServerClient.DetachDebugUI(_configuration.CreateRequest<RdbgDetachDebugUiRequest>());
+
+            _attached = false;
         }
 
         private async Task SendStepEvent<T>(T responder, int threadId, DebugStepAction action, bool singleThread, Action? successAction = null) where T : IRequestResponder

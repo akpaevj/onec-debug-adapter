@@ -72,6 +72,7 @@ namespace Onec.DebugAdapter.Services
                 SupportsExceptionFilterOptions = true,
                 SupportsConditionalBreakpoints = true,
                 SupportsLogPoints = true,
+                SupportsSingleThreadExecutionRequests = true,
                 ExceptionBreakpointFilters = new()
                 {
                     new()
@@ -242,6 +243,12 @@ namespace Onec.DebugAdapter.Services
                 };
             }));
 
+            if (launch)
+            {
+                var debuggee = new Debuggee(_configuration);
+                debuggee.Run(Protocol);
+            }
+
             _attached = true;
 
             switch (response!.Result)
@@ -267,12 +274,6 @@ namespace Onec.DebugAdapter.Services
                     _debugServerListener.Run(Protocol, _cancellation);
                     await _debugTargetsManager.Run(Protocol, _cancellation);
                     _stoppingManager.Run(Protocol, _cancellation);
-
-                    if (launch)
-                    {
-                        var debuggee = new Debuggee(_configuration);
-                        debuggee.Run(Protocol);
-                    }
 
                     break;
             };

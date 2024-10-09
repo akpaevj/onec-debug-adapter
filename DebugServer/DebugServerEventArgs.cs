@@ -13,4 +13,10 @@ namespace Onec.DebugAdapter.DebugServer
     public record ExpressionEvaluatedEventArgs(DbguiExtCmdInfoExprEvaluated Info);
 
     public record RuntimeExceptionArgs(DbguiExtCmdInfoRte Info);
+
+    public record SetForegroundHelperArgs(DbguiExtCmdInfoForegroundHelperSet Info);
+
+    public record ForegroundHelperRequestArgs(DbguiExtCmdInfoForegroundHelperRequest Info);
+
+    public record ProcessForegroundHelperArgs(DbguiExtCmdInfoForegroundHelperProcess Info);
 }

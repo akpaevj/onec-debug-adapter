@@ -461,7 +461,7 @@ namespace Onec.DebugAdapter.Services
                 _client.SendEvent(new StoppedEvent()
                 {
                     Reason = StoppedEvent.ReasonValue.Breakpoint,
-                    AllThreadsStopped = true,
+                    AllThreadsStopped = false,
                     ThreadId = _targetsManager.GetThreadId(e.Info.TargetId)
                 });
         }
@@ -494,7 +494,7 @@ namespace Onec.DebugAdapter.Services
             _client.SendEvent(new StoppedEvent()
             {
                 Reason = StoppedEvent.ReasonValue.Exception,
-                AllThreadsStopped = true,
+                AllThreadsStopped = false,
                 ThreadId = _targetsManager.GetThreadId(e.Info.TargetId)
             });
 

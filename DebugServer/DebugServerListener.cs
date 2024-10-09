@@ -21,6 +21,9 @@ namespace Onec.DebugAdapter.DebugServer
         public event EventHandler<CallStackFormedEventArgs>? CallStackFormed;
         public event EventHandler<ExpressionEvaluatedEventArgs>? ExpressionEvaluated;
         public event EventHandler<RuntimeExceptionArgs>? RuntimeException;
+        public event EventHandler<SetForegroundHelperArgs>? SetForegroundHelper;
+        public event EventHandler<ForegroundHelperRequestArgs>? ForegroundHelperRequested;
+        public event EventHandler<ProcessForegroundHelperArgs>? ProcessForegroundHelper;
 
         public DebugServerListener(IDebugConfiguration debugConfiguration, IDebugServerClient debugServerClient)
         {
@@ -60,16 +63,22 @@ namespace Onec.DebugAdapter.DebugServer
                                 case DbguiExtCmds.RteProcessing:
                                     RuntimeException?.Invoke(this, new RuntimeExceptionArgs((extCommand as DbguiExtCmdInfoRte)!));
                                     break;
-                                case DbguiExtCmds.Unknown:
+                                case DbguiExtCmds.ForegroundHelperSet:
+                                    SetForegroundHelper?.Invoke(this, new SetForegroundHelperArgs((extCommand as DbguiExtCmdInfoForegroundHelperSet)!));
+                                    break;
+                                case DbguiExtCmds.ForegroundHelperRequest:
+                                    ForegroundHelperRequested?.Invoke(this, new ForegroundHelperRequestArgs((extCommand as DbguiExtCmdInfoForegroundHelperRequest)!));
+                                    break;
+                                case DbguiExtCmds.ForegroundHelperProcess:
+                                    ProcessForegroundHelper?.Invoke(this, new ProcessForegroundHelperArgs((extCommand as DbguiExtCmdInfoForegroundHelperProcess)!));
+                                    break;
                                 case DbguiExtCmds.CorrectedBp:
                                 case DbguiExtCmds.RteOnBpConditionProcessing:
                                 case DbguiExtCmds.MeasureResultProcessing:
                                 case DbguiExtCmds.ValueModified:
                                 case DbguiExtCmds.ErrorViewInfo:
-                                case DbguiExtCmds.ForegroundHelperSet:
-                                case DbguiExtCmds.ForegroundHelperRequest:
-                                case DbguiExtCmds.ForegroundHelperProcess:
                                 case DbguiExtCmds.ShowMetadataObject:
+                                case DbguiExtCmds.Unknown:
                                 default:
                                     throw new NotImplementedException($"Получено неизвестное значение CmdID: {extCommand.CmdId}");
                             }

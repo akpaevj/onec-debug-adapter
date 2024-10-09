@@ -33,9 +33,13 @@ namespace Onec.DebugAdapter.V8
             var arguments = new[]
             {
                 $"/IBNAME \"{_configuration.InfoBase.Name}\"",
+                "/TCOMP -SDC",
+                "/DisableStartupMessages",
                 "/DisplayPerformance",
                 "/TechnicalSpecialistMode",
-                "/DEBUG -h"
+                "/DEBUG -http -attach",
+                $"/DEBUGGERURL \"http://{_configuration.DebugServerHost}:{_configuration.DebugServerPort}\"",
+                "/O Normal"
             };
 
             var exePath = Path.Join(_configuration.PlatformBin, "1cv8c.exe");
@@ -61,7 +65,6 @@ namespace Onec.DebugAdapter.V8
         {
             _needSendEvent = false;
             _process?.Kill();
-            _process?.WaitForExit(1500);
         }
 
         protected virtual void Dispose(bool disposing)

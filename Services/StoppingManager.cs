@@ -467,7 +467,7 @@ namespace Onec.DebugAdapter.Services
                 {
                     Reason = StoppedEvent.ReasonValue.Breakpoint,
                     AllThreadsStopped = false,
-                    ThreadId = _targetsManager.GetThreadId(e.Info.TargetId)
+                    ThreadId = threadId
                 });
             else
             {
@@ -475,7 +475,7 @@ namespace Onec.DebugAdapter.Services
                 {
                     Reason = StoppedEvent.ReasonValue.Step,
                     AllThreadsStopped = false,
-                    ThreadId = _targetsManager.GetThreadId(e.Info.TargetId)
+                    ThreadId = threadId
                 });
             }
         }
@@ -509,7 +509,7 @@ namespace Onec.DebugAdapter.Services
             {
                 Reason = StoppedEvent.ReasonValue.Exception,
                 AllThreadsStopped = false,
-                ThreadId = _targetsManager.GetThreadId(e.Info.TargetId)
+                ThreadId = threadId
             });
 
             _client.SendError(e.Info.Exception.Descr);

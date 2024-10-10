@@ -12,9 +12,11 @@ namespace Onec.DebugAdapter.Services
     {
         private readonly ILogger<ConsoleDebugAdapterService> _logger;
         private readonly V8DebugAdapter _debugAdapter;
+        private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
-        public ConsoleDebugAdapterService(V8DebugAdapter debugAdapter, ILogger<ConsoleDebugAdapterService> logger)
+        public ConsoleDebugAdapterService(V8DebugAdapter debugAdapter, IHostApplicationLifetime hostApplicationLifetime, ILogger<ConsoleDebugAdapterService> logger)
         {
+            _hostApplicationLifetime = hostApplicationLifetime;
             _debugAdapter = debugAdapter;
             _logger = logger;
         }
@@ -24,6 +26,9 @@ namespace Onec.DebugAdapter.Services
             try
             {
                 await _debugAdapter.Run(Console.OpenStandardInput(), Console.OpenStandardOutput(), stoppingToken);
+
+                if (!_hostApplicationLifetime.ApplicationStopping.IsCancellationRequested)
+                    _hostApplicationLifetime.StopApplication();
             }
             catch (TaskCanceledException) { }
             catch (Exception ex)

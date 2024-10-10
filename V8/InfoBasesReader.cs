@@ -16,7 +16,7 @@ namespace Onec.DebugAdapter.V8
             var basePath = Environment.OSVersion.Platform switch
             {
                 PlatformID.Win32NT => Environment.GetEnvironmentVariable("APPDATA"),
-                _ => Environment.GetEnvironmentVariable("USER")
+                _ => Environment.GetEnvironmentVariable("HOME")
             };
 
             var iBasesPath = Environment.OSVersion.Platform switch

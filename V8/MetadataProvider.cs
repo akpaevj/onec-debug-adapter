@@ -37,6 +37,7 @@ namespace Onec.DebugAdapter.V8
         {
             return moduleName switch
             {
+                "Module" => "32e087ab-1491-49b6-aba7-43571b41ac2b",
                 "CommandModule" => "078a6af8-d22c-4248-9c33-7e90075a3d2c",
                 "ObjectModule" => "a637f77f-3840-441d-a1c3-699c8c5cb7e0",
                 "ManagerModule" => "d1b64a2c-8078-4982-8190-8f81aefda192",
@@ -71,7 +72,7 @@ namespace Onec.DebugAdapter.V8
             {
                 CancellationToken = cancellationToken,
                 EnsureOrdered = false,
-                MaxDegreeOfParallelism = Environment.ProcessorCount,
+                MaxDegreeOfParallelism = 1,
                 BoundedCapacity = DataflowBlockOptions.Unbounded
             };
 
@@ -89,7 +90,7 @@ namespace Onec.DebugAdapter.V8
 
                 var extPath = Path.Combine(mdPath, "Ext");
                 if (Directory.Exists(extPath))
-                    foreach (var moduleFile in Directory.EnumerateFiles(extPath, "*.bsl"))
+                    foreach (var moduleFile in Directory.EnumerateFiles(extPath, "*.bsl", SearchOption.AllDirectories))
                     {
                         var propertyId = GetPropertyId(mdType, Path.GetFileNameWithoutExtension(moduleFile));
                         CacheModule(moduleFile, args.Extension, objectId, propertyId);
@@ -104,8 +105,10 @@ namespace Onec.DebugAdapter.V8
                         {
                             var formModuleFile = Directory.EnumerateFiles(formPath, "*.bsl", SearchOption.AllDirectories).FirstOrDefault();
                             if (formModuleFile != null)
-                                // Захардкоженный идентификатор типа модуля формы
-                                CacheModule(formModuleFile, args.Extension, GetObjectId(formXmlFile), "32e087ab-1491-49b6-aba7-43571b41ac2b");
+                            {
+                                var propertyId = GetPropertyId(mdType, Path.GetFileNameWithoutExtension(formModuleFile));
+                                CacheModule(formModuleFile, args.Extension, GetObjectId(formXmlFile), propertyId);
+                            }
                         }
                     }
 
@@ -131,6 +134,20 @@ namespace Onec.DebugAdapter.V8
 
             var rootReaderBlock = new ActionBlock<(string Extension, string Path)>(async args =>
             {
+                var mdXml = new XmlDocument();
+                mdXml.Load(Path.Combine(args.Path, "Configuration.xml"));
+
+                var typedNode = mdXml.SelectSingleNode("/*[local-name()='MetaDataObject']")!.FirstChild!;
+                var objectId = typedNode.Attributes!.GetNamedItem("uuid")!.Value!;
+
+                var extPath = Path.Combine(args.Path, "Ext");
+                if (Directory.Exists(extPath))
+                    foreach (var moduleFile in Directory.EnumerateFiles(extPath, "*.bsl", SearchOption.AllDirectories))
+                    {
+                        var propertyId = GetPropertyId("", Path.GetFileNameWithoutExtension(moduleFile));
+                        CacheModule(moduleFile, args.Extension, objectId, propertyId);
+                    }
+
                 var rootMdfolders = Directory.GetDirectories(args.Path);
 
                 foreach (var rootMdFolder in rootMdfolders)

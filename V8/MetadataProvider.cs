@@ -72,7 +72,7 @@ namespace Onec.DebugAdapter.V8
             {
                 CancellationToken = cancellationToken,
                 EnsureOrdered = false,
-                MaxDegreeOfParallelism = 1,
+                MaxDegreeOfParallelism = Environment.ProcessorCount,
                 BoundedCapacity = DataflowBlockOptions.Unbounded
             };
 

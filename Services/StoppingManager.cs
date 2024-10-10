@@ -79,12 +79,14 @@ namespace Onec.DebugAdapter.Services
                 {
                     Id = new BslModuleIdInternal()
                     {
-                        Type = string.IsNullOrEmpty(Extension) ? BslModuleType.ConfigModule : BslModuleType.ExtensionModule,
                         ExtensionName = Extension,
                         ObjectId = ObjectId,
                         PropertyId = PropertyId
                     }
                 };
+                if (!string.IsNullOrEmpty(Extension))
+                    moduleInfo.Id.Type = BslModuleType.ExtensionModule;
+
                 cArgs.Breakpoints.ForEach(bp =>
                 {
                     moduleInfo.BpInfo.Add(new BreakpointInfo()
@@ -457,6 +459,9 @@ namespace Onec.DebugAdapter.Services
                 return;
             }
 
+            if (e.Info.SendHitCounterOnly)
+                return;
+
             if (e.Info.StopByBp == true || e.Info.SuspendedByOther)
                 _client.SendEvent(new StoppedEvent()
                 {
@@ -464,6 +469,15 @@ namespace Onec.DebugAdapter.Services
                     AllThreadsStopped = false,
                     ThreadId = _targetsManager.GetThreadId(e.Info.TargetId)
                 });
+            else
+            {
+                _client.SendEvent(new StoppedEvent()
+                {
+                    Reason = StoppedEvent.ReasonValue.Step,
+                    AllThreadsStopped = false,
+                    ThreadId = _targetsManager.GetThreadId(e.Info.TargetId)
+                });
+            }
         }
 
         private async Task ContinueDebugTarget(DebugTargetId target)

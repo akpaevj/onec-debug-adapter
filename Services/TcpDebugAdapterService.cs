@@ -9,10 +9,12 @@ namespace Onec.DebugAdapter.Services
     {
         private readonly ILogger<TcpDebugAdapterService> _logger;
         private readonly V8DebugAdapter _debugAdapter;
+        private readonly IHostApplicationLifetime _hostApplicationLifetime;
         private readonly int _port;
 
-        public TcpDebugAdapterService(V8DebugAdapter debugAdapter, IConfiguration configuration, ILogger<TcpDebugAdapterService> logger)
+        public TcpDebugAdapterService(V8DebugAdapter debugAdapter, IHostApplicationLifetime hostApplicationLifetime, IConfiguration configuration, ILogger<TcpDebugAdapterService> logger)
         {
+            _hostApplicationLifetime = hostApplicationLifetime;
             _debugAdapter = debugAdapter;
             _logger = logger;
 
@@ -33,6 +35,9 @@ namespace Onec.DebugAdapter.Services
                 using var stream = client.GetStream();
 
                 await _debugAdapter.Run(stream, stream, stoppingToken);
+
+                if (!_hostApplicationLifetime.ApplicationStopping.IsCancellationRequested)
+                    _hostApplicationLifetime.StopApplication();
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)

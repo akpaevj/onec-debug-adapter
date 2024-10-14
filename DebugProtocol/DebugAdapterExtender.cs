@@ -37,7 +37,8 @@ namespace Onec.DebugAdapter.DebugProtocol
                 }
                 catch (System.Exception ex)
                 {
-                    handler.SetError(new ProtocolException("Ошибка установки автоподключаемых типов предметов отладки", ex));
+					_client.SendError(ex);
+					handler.SetError(new ProtocolException("Ошибка установки автоподключаемых типов предметов отладки"));
                 }
             });
 
@@ -56,7 +57,8 @@ namespace Onec.DebugAdapter.DebugProtocol
                 }
                 catch (System.Exception ex)
                 {
-                    handler.SetError(new ProtocolException("Ошибка подключения предмета отладки", ex));
+					_client.SendError(ex);
+					handler.SetError(new ProtocolException("Ошибка подключения предмета отладки"));
                 }
             });
 
@@ -80,7 +82,8 @@ namespace Onec.DebugAdapter.DebugProtocol
                 }
                 catch (System.Exception ex)
                 {
-                    handler.SetError(new ProtocolException("Ошибка получения списка предметов отладки", ex));
+					_client.SendError(ex);
+					handler.SetError(new ProtocolException("Ошибка получения списка предметов отладки"));
                 }
             });
 

@@ -57,7 +57,7 @@ namespace Onec.DebugAdapter.Services
 
                 Protocol.Run();
                 Protocol.WaitForReader();
-                
+
                 await Disconnect();
             }, cancellationToken);
         }
@@ -144,7 +144,7 @@ namespace Onec.DebugAdapter.Services
                 responder.SetResponse(await _stoppingManager.SetExceptionBreakpoints(responder.Arguments));
             }
             catch (OperationCanceledException) { }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 SetProtocolError(responder, "Ошибка при обработке запроса конфигурации останова по исключению", ex);
             }
@@ -254,17 +254,17 @@ namespace Onec.DebugAdapter.Services
             switch (response!.Result)
             {
                 case AttachDebugUiResult.Unknown:
-                    SetProtocolError(responder, "Неизвестная ошибка при подключении к серверу отладки");
+					SetProtocolError(responder, "Неизвестная ошибка при подключении к серверу отладки");
                     break;
                 case AttachDebugUiResult.IbInDebug:
-                    SetProtocolError(responder, "Информационная база уже отлаживается");
+					SetProtocolError(responder, "Информационная база уже отлаживается");
                     break;
                 case AttachDebugUiResult.NotRegistered:
-                    SetProtocolError(responder, "Не удалось подключиться к серверу отладки");
+					SetProtocolError(responder, "Не удалось подключиться к серверу отладки");
                     break;
                 case AttachDebugUiResult.CredentialsRequired:
                 case AttachDebugUiResult.FullCredentialsRequired:
-                    SetProtocolError(responder, "Ошибка аутентификации на сервере отладки");
+					SetProtocolError(responder, "Ошибка аутентификации на сервере отладки");
                     break;
                 default:
                     responder.SetResponse(launch ? new LaunchResponse() : new AttachResponse());
@@ -330,8 +330,11 @@ namespace Onec.DebugAdapter.Services
         private static void SetProtocolError(IRequestResponder responder, string message)
             => responder.SetError(new ProtocolException(message));
 
-        private static void SetProtocolError(IRequestResponder responder, string message, Exception exception)
-            => responder.SetError(new ProtocolException(message, exception));
+		private void SetProtocolError(IRequestResponder responder, string message, Exception exception)
+        {
+			Protocol.SendError(exception);
+			responder.SetError(new ProtocolException(message));
+		}
 
         protected virtual void Dispose(bool disposing)
         {

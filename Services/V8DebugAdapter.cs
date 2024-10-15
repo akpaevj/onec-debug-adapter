@@ -275,13 +275,13 @@ namespace Onec.DebugAdapter.Services
 					SetProtocolError(responder, "Ошибка аутентификации на сервере отладки");
                     break;
                 default:
-                    responder.SetResponse(launch ? new LaunchResponse() : new AttachResponse());
-                    Protocol.SendEvent(new InitializedEvent());
-
 					await _metadataProvider.Init(Protocol, _cancellation);
                     _debugServerListener.Run(Protocol, _cancellation);
 					await _debugTargetsManager.Run(Protocol, _cancellation);
                     _stoppingManager.Run(Protocol, _cancellation);
+
+					responder.SetResponse(launch ? new LaunchResponse() : new AttachResponse());
+					Protocol.SendEvent(new InitializedEvent());
 
 					break;
             };

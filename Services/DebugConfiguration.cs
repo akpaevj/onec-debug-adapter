@@ -16,7 +16,8 @@ namespace Onec.DebugAdapter.Services
 {
     public class DebugConfiguration : IDebugConfiguration
     {
-        public event EventHandler? Initialized;
+        private readonly TaskCompletionSource _tcs = new();
+        public Task Initialization => _tcs.Task;
 
         public InfoBaseItem InfoBase { get; private set; }
         public bool IsFileInfoBase { get; private set; } = false;
@@ -47,7 +48,7 @@ namespace Onec.DebugAdapter.Services
             DebuggerID = Guid.NewGuid().ToString();
 
             if (!IsFileInfoBase)
-                Initialized?.Invoke(this, new EventArgs());
+                _tcs.SetResult();
         }
 
 		public void SetDebugServerPort(int port)
@@ -55,7 +56,7 @@ namespace Onec.DebugAdapter.Services
 			DebugServerPort = port;
 
 			if (IsFileInfoBase)
-				Initialized?.Invoke(this, new EventArgs());
+				_tcs.SetResult();
 		}
 
 		private async Task InitInfoBase(Dictionary<string, JToken> arguments)

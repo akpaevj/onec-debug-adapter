@@ -8,33 +8,40 @@ namespace Onec.DebugAdapter.DebugServer
 {
     public class DebugServerClient : IDebugServerClient, IDisposable
     {
-        private readonly IDebugConfiguration _configuration;
+		private readonly TaskCompletionSource _tcs = new();
+
+		private readonly IDebugConfiguration _configuration;
         private RestClient _client = null!;
 
         public DebugServerClient(IDebugConfiguration configuration)
         {
             _configuration = configuration;
 
-            _configuration.Initialized += (sender, args) => {
-                var options = new RestClientOptions($"http://{_configuration.DebugServerHost}:{_configuration.DebugServerPort}/e1crdbg")
-                {
-                    ThrowOnAnyError = true,
-                    UserAgent = "1CV8"
-                };
+            _configuration.Initialization.ContinueWith(c =>
+            {
+				var options = new RestClientOptions($"http://{_configuration.DebugServerHost}:{_configuration.DebugServerPort}/e1crdbg")
+				{
+					ThrowOnAnyError = true,
+					UserAgent = "1CV8"
+				};
 
-                _client = new RestClient(options, configureSerialization: s =>
-                {
-                    s.UseSerializer<RequestSerializer>();
-                })
-                {
-                    AcceptedContentTypes = new string[] { ContentType.Xml }
-                };
-            };
+				_client = new RestClient(options, configureSerialization: s =>
+				{
+					s.UseSerializer<RequestSerializer>();
+				})
+				{
+					AcceptedContentTypes = new string[] { ContentType.Xml }
+				};
+
+                _tcs.SetResult();
+			});
         }
 
         public async Task Test(CancellationToken cancellationToken = default)
         {
-            var request = new RestRequest("rdbgTest");
+            await WaitInitialized();
+
+			var request = new RestRequest("rdbgTest");
             request.AddQueryParameter("cmd", "test");
 
             await _client.PostAsync<RdbgTestRequest>(request, cancellationToken);
@@ -42,7 +49,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task ClearBreakOnNextStatement(RdbgSetBreamOnNextStatementRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "clearBreakOnNextStatement");
             restRequest.AddXmlBody(request);
 
@@ -51,7 +60,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task<RdbgAttachDebugUiResponse?> AttachDebugUI(RdbgAttachDebugUiRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "attachDebugUI");
             restRequest.AddXmlBody(request);
 
@@ -60,7 +71,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task InitSettings(RdbgSetInitialDebugSettingsRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "initSettings");
             restRequest.AddXmlBody(request);
 
@@ -69,7 +82,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task<RdbgDetachDebugUiResponse?> DetachDebugUI(RdbgDetachDebugUiRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "detachDebugUI");
             restRequest.AddXmlBody(request);
 
@@ -78,7 +93,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task<RdbgsGetDbgTargetsResponse?> GetDbgTargets(RdbgsGetDbgTargetsRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "getDbgTargets");
             restRequest.AddXmlBody(request);
 
@@ -87,7 +104,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task SetBreakpoints(RdbgSetBreakpointsRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "setBreakpoints");
             restRequest.AddXmlBody(request);
 
@@ -96,7 +115,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task SetBreakOnRTE(RdbgSetRunTimeErrorProcessingRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "setBreakOnRTE");
             restRequest.AddXmlBody(request);
 
@@ -105,7 +126,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task<RdbgGetCallStackResponse?> GetCallStack(RdbgGetCallStackRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "getCallStack");
             restRequest.AddXmlBody(request);
 
@@ -114,17 +137,20 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task<RdbgPingDebugUiResponse?> PingDebugUiParams(string dbgUi, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "pingDebugUIParams");
             restRequest.AddQueryParameter("dbgui", dbgUi);
-            //restRequest.AddXmlBody(new RdbgPingDebugUiRequest());
 
             return await _client.PostAsync<RdbgPingDebugUiResponse>(restRequest, cancellationToken);
         }
 
         public async Task SetAutoAttachSettings(RdbgSetAutoAttachSettingsRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "setAutoAttachSettings");
             restRequest.AddXmlBody(request);
 
@@ -133,7 +159,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task<RdbgAttachDetachDbgTargetResponse?> AttachDetachDbgTargets(RdbgAttachDetachDebugTargetsRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "attachDetachDbgTargets");
             restRequest.AddXmlBody(request);
 
@@ -142,7 +170,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task<RdbgEvalLocalVariablesResponse?> EvalLocalVariables(RdbgEvalLocalVariablesRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "evalLocalVariables");
             restRequest.AddXmlBody(request);
 
@@ -151,7 +181,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task<RdbgEvalExprResponse?> EvalExpr(RdbgEvalExprRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "evalExpr");
             restRequest.AddXmlBody(request);
 
@@ -160,7 +192,9 @@ namespace Onec.DebugAdapter.DebugServer
 
         public async Task<RdbgStepResponse?> Step(RdbgStepRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("rdbg");
+			await WaitInitialized();
+
+			var restRequest = new RestRequest("rdbg");
             restRequest.AddQueryParameter("cmd", "step");
             restRequest.AddXmlBody(request);
 
@@ -172,5 +206,8 @@ namespace Onec.DebugAdapter.DebugServer
             _client?.Dispose();
             GC.SuppressFinalize(this);
         }
+
+        private async Task WaitInitialized()
+            => await _tcs.Task;
     }
 }

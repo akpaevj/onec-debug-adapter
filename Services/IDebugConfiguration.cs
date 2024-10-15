@@ -6,9 +6,9 @@ namespace Onec.DebugAdapter.Services
 {
     public interface IDebugConfiguration
     {
-        event EventHandler? Initialized;
+        Task Initialization { get; }
 
-        InfoBaseItem InfoBase { get; }
+		InfoBaseItem InfoBase { get; }
         bool IsFileInfoBase { get; }
         string InfoBaseName { get; }
         string PlatformBin { get; }

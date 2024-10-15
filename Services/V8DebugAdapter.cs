@@ -26,15 +26,19 @@ namespace Onec.DebugAdapter.Services
         private readonly IDebugTargetsManager _debugTargetsManager;
         private readonly IStoppingManager _stoppingManager;
         private readonly IDebugAdapterExtender _debugAdapterExtender;
+        private readonly DebugServerProcess _debugServer;
+		private readonly DebuggeeProcess _debuggee;
 
-        public V8DebugAdapter(
+		public V8DebugAdapter(
             IDebugConfiguration configuration,
             IMetadataProvider metadataProvider,
             IDebugServerClient debugServerClient,
             IDebugServerListener debugServerListener,
             IDebugTargetsManager debugTargetsManager,
             IStoppingManager stoppingManager,
-            IDebugAdapterExtender debugAdapterExtender)
+            IDebugAdapterExtender debugAdapterExtender,
+            DebuggeeProcess debuggee,
+            DebugServerProcess debugServer)
         {
             _configuration = configuration;
             _metadataProvider = metadataProvider;
@@ -43,7 +47,10 @@ namespace Onec.DebugAdapter.Services
             _debugTargetsManager = debugTargetsManager;
             _stoppingManager = stoppingManager;
             _debugAdapterExtender = debugAdapterExtender;
-        }
+			_debugServer = debugServer;
+            _debuggee = debuggee;
+
+		}
 
         public async Task Run(Stream input, Stream output, CancellationToken cancellationToken = default)
         {
@@ -64,7 +71,7 @@ namespace Onec.DebugAdapter.Services
 
         protected override void HandleInitializeRequestAsync(IRequestResponder<InitializeArguments, InitializeResponse> responder)
         {
-            _linesStartAt1 = responder.Arguments.LinesStartAt1 ?? false;
+			_linesStartAt1 = responder.Arguments.LinesStartAt1 ?? false;
 
             responder.SetResponse(new()
             {
@@ -233,6 +240,10 @@ namespace Onec.DebugAdapter.Services
         private async Task InitLaunchAttach(IRequestResponder responder, Dictionary<string, JToken> configurationArgs, bool launch)
         {
             await _configuration.Init(configurationArgs);
+
+            if (_configuration.IsFileInfoBase)
+                await _debugServer.Run(Protocol);
+
             await _debugServerClient.Test(_cancellation);
 
             var response = await _debugServerClient.AttachDebugUI(_configuration.CreateRequest<RdbgAttachDebugUiRequest>(i =>
@@ -243,13 +254,10 @@ namespace Onec.DebugAdapter.Services
                 };
             }));
 
-            if (launch)
-            {
-                var debuggee = new Debuggee(_configuration);
-                debuggee.Run(Protocol);
-            }
+			if (launch)
+				_debuggee.Run(Protocol);
 
-            _attached = true;
+			_attached = true;
 
             switch (response!.Result)
             {
@@ -270,12 +278,12 @@ namespace Onec.DebugAdapter.Services
                     responder.SetResponse(launch ? new LaunchResponse() : new AttachResponse());
                     Protocol.SendEvent(new InitializedEvent());
 
-                    await _metadataProvider.Init(_cancellation);
+					await _metadataProvider.Init(Protocol, _cancellation);
                     _debugServerListener.Run(Protocol, _cancellation);
-                    await _debugTargetsManager.Run(Protocol, _cancellation);
+					await _debugTargetsManager.Run(Protocol, _cancellation);
                     _stoppingManager.Run(Protocol, _cancellation);
 
-                    break;
+					break;
             };
         }
 

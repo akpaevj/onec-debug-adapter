@@ -27,7 +27,9 @@ namespace Onec.DebugAdapter
                     sc.AddSingleton<IDebugServerListener, DebugServerListener>();
                     sc.AddSingleton<IDebugTargetsManager, DebugTargetsManager>();
                     sc.AddSingleton<IStoppingManager, StoppingManager>();
-                    sc.AddSingleton<V8DebugAdapter>();
+					sc.AddSingleton<DebuggeeProcess>();
+					sc.AddSingleton<DebugServerProcess>();
+					sc.AddSingleton<V8DebugAdapter>();
                     sc.AddSingleton<IDebugAdapterExtender, DebugAdapterExtender>();
 
                     if (context.Configuration.GetValue("debug", false))

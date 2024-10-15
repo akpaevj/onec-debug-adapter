@@ -9,6 +9,7 @@ namespace Onec.DebugAdapter.Services
         event EventHandler? Initialized;
 
         InfoBaseItem InfoBase { get; }
+        bool IsFileInfoBase { get; }
         string InfoBaseName { get; }
         string PlatformBin { get; }
         string DebuggerID { get; }
@@ -17,6 +18,9 @@ namespace Onec.DebugAdapter.Services
         string RootProject { get; }
         IReadOnlyDictionary<string, string> Extensions { get; }
         DebugTargetType[] InitialTargetTypes { get; }
+
+        // Отладочный порт файловой информационной базы выбирается на лету, поэтому требуется инжект в конфигурацию отладки
+        void SetDebugServerPort(int port);
 
         T CreateRequest<T>() where T : RDbgBaseRequest, new();
         T CreateRequest<T>(Action<T> factory) where T : RDbgBaseRequest, new();

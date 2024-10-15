@@ -10,6 +10,7 @@ using System.Threading.Tasks.Dataflow;
 using System.Linq.Expressions;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using Microsoft.VisualStudio.Shared.VSCodeDebugProtocol.Messages;
 
 namespace Onec.DebugAdapter.V8
 {
@@ -24,8 +25,15 @@ namespace Onec.DebugAdapter.V8
             _configuration = debugConfiguration;
         }
 
-        public async Task Init(CancellationToken cancellationToken)
-            => await FillMetadataCache(cancellationToken);
+        public async Task Init(DebugProtocolClient client, CancellationToken cancellationToken)
+        {
+            var id = Guid.NewGuid().ToString();
+            client.SendEvent(new ProgressStartEvent(id, "Чтение структуры конфигурации"));
+
+			await FillMetadataCache(cancellationToken);
+
+			client.SendEvent(new ProgressEndEvent(id));
+		}
 
         public string ModulePathByInfo(string extension, string objectId, string propertyId, CancellationToken cancellationToken = default)
             => _pathsByModuleInfo[(extension, objectId, propertyId)];

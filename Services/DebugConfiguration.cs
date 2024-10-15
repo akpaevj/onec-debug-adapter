@@ -19,6 +19,7 @@ namespace Onec.DebugAdapter.Services
         public event EventHandler? Initialized;
 
         public InfoBaseItem InfoBase { get; private set; }
+        public bool IsFileInfoBase { get; private set; } = false;
         public string InfoBaseName { get; private set; } = string.Empty;
         public string PlatformBin { get; private set; } = string.Empty;
         public string DebugServerHost { get; private set; } = string.Empty;
@@ -38,35 +39,54 @@ namespace Onec.DebugAdapter.Services
             InitInitialTargetTypes(arguments);
 
             DebugServerHost = arguments.GetValueAsString("debugServerHost");
-            DebugServerPort = arguments.GetValueAsInt("debugServerPort") ?? 1550;
+            
+            if (!IsFileInfoBase)
+                DebugServerPort = arguments.GetValueAsInt("debugServerPort") ?? 1550;
+
             RootProject = arguments.GetValueAsString("rootProject");
             DebuggerID = Guid.NewGuid().ToString();
 
-            Initialized?.Invoke(this, new EventArgs());
+            if (!IsFileInfoBase)
+                Initialized?.Invoke(this, new EventArgs());
         }
 
-        private async Task InitInfoBase(Dictionary<string, JToken> arguments)
+		public void SetDebugServerPort(int port)
+        {
+			DebugServerPort = port;
+
+			if (IsFileInfoBase)
+				Initialized?.Invoke(this, new EventArgs());
+		}
+
+		private async Task InitInfoBase(Dictionary<string, JToken> arguments)
         {
             var infoBase = arguments.GetValueAsString("infoBase") ?? "";
             if (string.IsNullOrEmpty(infoBase))
                 throw new System.Exception("Не задано наименование информационной базы");
 
             var infoBases = await InfoBasesReader.Read();
-            var infobaseItem = infoBases.FirstOrDefault(c => c.Name == infoBase);
-            if (infobaseItem == null)
-                throw new System.Exception($"Информационная база \"{infoBase}\" не найдена в списке баз");
+            var infobaseItem = infoBases.FirstOrDefault(c => c.Name == infoBase) 
+                ?? throw new System.Exception($"Информационная база \"{infoBase}\" не найдена в списке баз");
 
-            InfoBase = infobaseItem;
+			InfoBase = infobaseItem;
 
             var connectionString = infobaseItem.Connect;
             if (string.IsNullOrEmpty(connectionString))
                 throw new System.Exception($"Не удалось определить строку подключения к информационной базе");
 
-            var reference = Regex.Match(connectionString, "(?<=Ref=\").*?(?=\")", RegexOptions.ExplicitCapture).Value;
-            if (string.IsNullOrEmpty(reference))
-                throw new System.Exception($"Не удалось определить имя информационной базы по строке подключения {connectionString}");
+            if (connectionString.StartsWith("File=", StringComparison.OrdinalIgnoreCase))
+            {
+                IsFileInfoBase = true;
+				InfoBaseName = "DefAlias";
+			}
+            else
+            {
+				var reference = Regex.Match(connectionString, "(?<=Ref=\").*?(?=\")", RegexOptions.ExplicitCapture).Value;
+				if (string.IsNullOrEmpty(reference))
+					throw new System.Exception($"Не удалось определить имя информационной базы по строке подключения {connectionString}");
 
-            InfoBaseName = reference;
+				InfoBaseName = reference;
+			}
         }
 
         private void InitPlatformBin(Dictionary<string, JToken> arguments)
@@ -150,5 +170,5 @@ namespace Onec.DebugAdapter.Services
 
             return request;
         }
-    }
+	}
 }

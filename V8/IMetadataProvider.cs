@@ -1,8 +1,10 @@
-﻿namespace Onec.DebugAdapter.V8
+﻿using Microsoft.VisualStudio.Shared.VSCodeDebugProtocol;
+
+namespace Onec.DebugAdapter.V8
 {
     public interface IMetadataProvider
     {
-        Task Init(CancellationToken cancellationToken = default);
+        Task Init(DebugProtocolClient client, CancellationToken cancellationToken = default);
 
         string ModulePathByInfo(string extension, string objectId, string propertyId, CancellationToken cancellationToken = default);
 

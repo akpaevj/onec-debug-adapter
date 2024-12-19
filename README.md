@@ -16,40 +16,42 @@
 
 ```json
 {
-	"folders": [
-		{
-			"path": "erp",
-			"name": "ERP"
-		},
-		{
-			"path": "my_extension",
-			"name": "МоеРасширение"
-		}
-	],
-	"launch": {
-		"version": "0.2.0",
-		"configurations": [
-			{
-				"name": "Отладка 1С (запуск)",
-				"type": "onec",
-				"request": "launch",
-				"platformPath": "${env:PROGRAMFILES}/1cv8",
-				"platformVersion": "8.3.24.1548",
-				"rootProject": "${workspaceFolder:ERP}",
-				"infoBase": "Информационная база #2",
-				"debugServerHost": "localhost",
-				"debugServerPort": 1550,
-				"extensions": [
-					"${workspaceFolder:МоеРасширение}"
-				],
-				"autoAttachTypes": [
-					"Client",
-					"Server"
-				]
-			}
-		]
-	},
-	"settings": {}
+   "folders":[
+      {
+         "path":"erp",
+         "name":"ERP"
+      },
+      {
+         "path":"my_extension",
+         "name":"МоеРасширение"
+      }
+   ],
+   "launch":{
+      "version":"0.2.0",
+      "configurations":[
+         {
+            "name":"Отладка 1С (запуск)",
+            "type":"onec",
+            "request":"launch",
+            "platformPath":"${env:PROGRAMFILES}/1cv8",
+            "platformVersion":"8.3.24.1548",
+            "rootProject":"${workspaceFolder:ERP}",
+            "infoBase":"Информационная база #2",
+            "debugServerHost":"localhost",
+            "debugServerPort":1550,
+            "extensions":[
+               "${workspaceFolder:МоеРасширение}"
+            ],
+            "autoAttachTypes":[
+               "Client",
+               "Server"
+            ]
+         }
+      ]
+   },
+   "settings":{
+      
+   }
 }
 ```
 
